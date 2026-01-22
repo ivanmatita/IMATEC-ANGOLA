@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-ao">
 <head>
@@ -8,30 +7,74 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <!-- EmailJS SDK para envio de emails no front-end -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          // Inicialização do EmailJS - Substituir pela chave pública real se necessário
+          emailjs.init("user_O1Y3iVzI2X9X9X9X9");
+       })();
+    </script>
     <link rel="stylesheet" href="./css/style.css">
 <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.475.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
+<style>
+    /* Loader de transição ultra-rápida */
+    #initial-loader {
+        position: fixed;
+        inset: 0;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+    }
+    .loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
 </head>
 <body class="min-h-screen bg-slate-50 font-inter text-slate-800">
-    <div id="app">
-        <!-- Loader inicial robusto -->
-        <div class="h-screen w-full flex items-center justify-center bg-white">
-            <div class="flex flex-col items-center space-y-4">
-                <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">IMATEC SOFTWARE</p>
-            </div>
-        </div>
+    <!-- Loader Inicial que desaparece assim que o React monta -->
+    <div id="initial-loader">
+        <div class="loader-spinner"></div>
+        <p class="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Iniciando IMATEC SOFTWARE...</p>
     </div>
-    <!-- O motor JS será injetado aqui -->
+
+    <div id="app"></div>
+
+    <script type="module">
+        // Remove o loader assim que o script carregar
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('initial-loader');
+            if (loader) {
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 300);
+                }, 500);
+            }
+        });
+    </script>
 </body>
 </html>
