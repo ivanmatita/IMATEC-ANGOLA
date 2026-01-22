@@ -7,7 +7,9 @@
     <title>IMATEC SOFTWARE - Multi-Company ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Ícones e Bibliotecas Externas -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
     <link rel="stylesheet" href="./css/style.css">
 <script type="importmap">
 {
@@ -23,7 +25,7 @@
 </head>
 <body class="min-h-screen bg-slate-50 font-inter">
     <div id="app">
-        <!-- Loader inicial robusto: Se o JS falhar, este loader permanece visível para indicar erro de carregamento -->
+        <!-- Loader inicial enquanto o motor JS é processado -->
         <div class="h-screen w-full flex items-center justify-center bg-white">
             <div class="flex flex-col items-center space-y-6">
                 <div class="relative">
@@ -32,11 +34,10 @@
                 </div>
                 <div class="text-center">
                     <p class="text-[10px] font-black text-slate-800 uppercase tracking-[0.3em] animate-pulse">Iniciando IMATEC SOFTWARE</p>
-                    <p class="text-[9px] text-slate-400 mt-2 font-medium">Sincronizando módulos multi-empresa...</p>
+                    <p class="text-[9px] text-slate-400 mt-2 font-medium">Conectando ao banco de dados multi-empresa...</p>
                 </div>
             </div>
         </div>
     </div>
-    <!-- O script index.tsx é injetado automaticamente pelo ambiente de execução -->
 </body>
 </html>
