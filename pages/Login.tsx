@@ -21,13 +21,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Simulated login with company isolation logic
     setTimeout(() => {
+      // Fixed mockEmpresa to match the Empresa interface in types.ts by removing unknown fields
       const mockEmpresa: Empresa = {
         id: 'emp-123',
         nome: 'IMATEC Teste, Lda',
         nif: '5409876543',
-        endereco: 'Luanda, Angola',
-        email_admin: 'admin@imatec.co.ao',
-        telefone: '923000000',
+        nome_empresa: 'IMATEC Teste, Lda',
+        nif_empresa: '5409876543',
+        administrador: 'admin@imatec.co.ao',
+        contacto: '923000000',
+        email: 'admin@imatec.co.ao',
+        tipo_empresa: 'Privada',
         created_at: new Date().toISOString()
       };
       

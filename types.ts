@@ -1,12 +1,15 @@
 
 export interface Empresa {
   id: string;
+  nome_empresa: string;
+  nif_empresa: string;
+  // Common fields used across UI components for display
   nome: string;
   nif: string;
-  endereco: string;
-  email_admin: string;
-  telefone: string;
-  logo_url?: string;
+  administrador: string;
+  contacto: string;
+  email: string;
+  tipo_empresa: string;
   created_at: string;
 }
 
@@ -18,30 +21,7 @@ export interface User {
   role: 'admin' | 'operador' | 'contabilista';
 }
 
-export interface Produto {
-  id: string;
-  empresa_id: string;
-  nome: string;
-  preco: number;
-  stock: number;
-  categoria: string;
-  unidade: string;
-}
-
-export interface Fatura {
-  id: string;
-  empresa_id: string;
-  numero: string;
-  cliente_nome: string;
-  cliente_nif: string;
-  data_emissao: string;
-  total_liquido: number;
-  total_imposto: number;
-  total_geral: number;
-  estado: 'pago' | 'pendente' | 'anulado';
-}
-
-// --- RH MODULE TYPES ---
+// Added missing types for RH module as required by pages/RH.tsx
 export type TipoContrato = 'Indeterminado' | 'Termo Certo' | 'Termo Incerto' | 'Estágio';
 export type EstadoFuncionario = 'Ativo' | 'Inativo' | 'Férias' | 'Suspenso';
 
@@ -64,21 +44,38 @@ export interface Funcionario {
   salario_base: number;
   dependentes: number;
   regime_trabalho: string;
-  estado: EstadoFuncionario;
-  data_cessacao?: string;
-  motivo_cessacao?: string;
+  estado: EstadoFuncionario | string;
 }
 
+export interface Faturacao {
+  id: string;
+  empresa_id: string;
+  numero: string;
+  cliente: string;
+  total: number;
+  estado: string;
+  created_at: string;
+}
+
+// Missing interface for salary processing in RH
+export interface ProcessamentoSalario {
+  funcionario_id: string;
+  mes: number;
+  ano: number;
+  liquido: number;
+  estado: string;
+}
+
+// Missing interface for daily effectiveness tracking in RH
 export interface EfetividadeDiaria {
   id: string;
   funcionario_id: string;
   empresa_id: string;
   mes: number;
   ano: number;
-  registos: Record<number, 'FOLGA' | 'SERVIÇO' | 'JUSTIFICADA' | 'INJUSTIFICADA' | 'FÉRIAS'>;
+  registos: Record<number, string>;
   horas_extra: Record<number, number>;
   horas_perdidas: Record<number, number>;
-  // Campos adicionais editáveis
   abonos: number;
   subsidios: number;
   premios: number;
@@ -86,53 +83,16 @@ export interface EfetividadeDiaria {
   observacoes: string;
 }
 
-export interface ProcessamentoSalario {
-  id: string;
-  empresa_id: string;
-  funcionario_id: string;
-  mes: number;
-  ano: number;
-  salario_base: number;
-  complemento_salarial: number;
-  faltas_desconto: number;
-  horas_extras_valor: number;
-  horas_perdidas_valor: number;
-  subsidio_ferias: number;
-  subsidio_natal: number;
-  abono_familia: number;
-  subsidio_transporte: number;
-  subsidio_alimentacao: number;
-  subsidio_alojamento: number;
-  irt: number;
-  inss_trabalhador: number; // 3%
-  inss_patronal: number;    // 8%
-  premios: number;
-  adiantamentos: number;
-  liquido: number;
-  data_processamento: string;
-  estado: 'Pendente' | 'Processado';
-}
-
-export interface DocumentoFuncionario {
-  id: string;
-  funcionario_id: string;
-  empresa_id: string;
-  nome: string;
-  tipo: 'BI' | 'NIF' | 'Contrato' | 'Outros';
-  url: string;
-  data_upload: string;
-}
-
 export enum AppRoute {
   LOGIN = '/login',
   REGISTER = '/register',
   DASHBOARD = '/',
-  FATURACAO = '/faturacao',
-  CONTABILIDADE = '/contabilidade',
-  STOCK = '/stock',
-  FORNECEDORES = '/fornecedores',
-  POS = '/pos',
   RH = '/rh',
+  FATURACAO = '/faturacao',
+  STOCK = '/stock',
+  POS = '/pos',
+  CONTABILIDADE = '/contabilidade',
+  FORNECEDORES = '/fornecedores',
   ADMIN = '/admin',
   CONFIG = '/config'
 }

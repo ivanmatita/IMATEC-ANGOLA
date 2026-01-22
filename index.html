@@ -7,7 +7,6 @@
     <title>IMATEC SOFTWARE - Multi-Company ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-    <!-- Ícones e Bibliotecas Externas -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://smtpjs.com/v3/smtp.js"></script>
     <link rel="stylesheet" href="./css/style.css">
@@ -23,21 +22,16 @@
 }
 </script>
 </head>
-<body class="min-h-screen bg-slate-50 font-inter">
+<body class="min-h-screen bg-slate-50 font-inter text-slate-800">
     <div id="app">
-        <!-- Loader inicial enquanto o motor JS é processado -->
+        <!-- Loader inicial robusto -->
         <div class="h-screen w-full flex items-center justify-center bg-white">
-            <div class="flex flex-col items-center space-y-6">
-                <div class="relative">
-                    <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                    <div class="absolute inset-0 flex items-center justify-center font-bold text-blue-600 text-xs">I</div>
-                </div>
-                <div class="text-center">
-                    <p class="text-[10px] font-black text-slate-800 uppercase tracking-[0.3em] animate-pulse">Iniciando IMATEC SOFTWARE</p>
-                    <p class="text-[9px] text-slate-400 mt-2 font-medium">Conectando ao banco de dados multi-empresa...</p>
-                </div>
+            <div class="flex flex-col items-center space-y-4">
+                <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">IMATEC SOFTWARE</p>
             </div>
         </div>
     </div>
+    <!-- O motor JS será injetado aqui -->
 </body>
 </html>

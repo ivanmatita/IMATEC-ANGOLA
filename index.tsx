@@ -6,7 +6,6 @@ const SUPABASE_URL = 'https://bgudiehufcvdbjaekxyu.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJndWRpZWh1ZmN2ZGJqYWVreHl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NDM5MjUsImV4cCI6MjA4NDExOTkyNX0.HjJbxhHaEhP4pDQ3fdYsoXKSmwZnBunzGEiTm_Bpks0';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. UTILITÁRIOS DE RENDERIZAÇÃO
 const render = (html: string) => {
     const app = document.getElementById('app');
     if (app) {
@@ -15,145 +14,63 @@ const render = (html: string) => {
     }
 };
 
-// 3. ENVIO DE E-MAIL (SMTPJS)
-const sendActivationEmail = (email: string, empresaNome: string) => {
-    console.log(`[IMATEC] Enviando e-mail de ativação para ${email}...`);
-    (window as any).Email.send({
-        Host: "smtp.gmail.com",
-        Username: "imatec38@gmail.com",
-        Password: "odji bakq atmf xqcd",
-        To: email,
-        From: "imatec38@gmail.com",
-        Subject: "Acesso ao Sistema IMATEC SOFTWARE",
-        Body: `
-            <div style="font-family: Arial, sans-serif; color: #1e3a8a; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                <h2 style="color: #1e3a8a;">Bem-vindo à IMATEC SOFTWARE!</h2>
-                <p>Sua empresa <b>${empresaNome}</b> foi registada com sucesso no nosso sistema multi-empresa.</p>
-                <p>Pode agora aceder ao seu dashboard utilizando o seu email e a palavra-passe definida.</p>
-                <br>
-                <p style="font-size: 12px; color: #666;">Este é um email automático, por favor não responda.</p>
-                <p>Atenciosamente,<br><b>Equipa Técnica IMATEC</b></p>
-            </div>
-        `
-    }).then((message: string) => console.log("[IMATEC] Status do Email:", message));
+// 2. ENVIO DE EMAIL (SMTPJS) - COM PROTEÇÃO CONTRA UNDEFINED
+const sendActivationEmail = (email: string, empresaNome: string, pass: string) => {
+    const Email = (window as any).Email;
+    
+    // Verifica se a biblioteca SMTPJS foi carregada corretamente
+    if (!Email || typeof Email.send !== 'function') {
+        console.warn("[IMATEC] SMTPJS não disponível. O e-mail não será enviado, mas o registo continuará.");
+        return;
+    }
+    
+    try {
+        Email.send({
+            Host: "smtp.gmail.com",
+            Username: "imatec38@gmail.com",
+            Password: "odji bakq atmf xqcd",
+            To: email,
+            From: "imatec38@gmail.com",
+            Subject: "Ativação de Conta - IMATEC SOFTWARE",
+            Body: `
+                <div style="font-family: sans-serif; color: #1e3a8a; padding: 40px; border: 1px solid #e2e8f0; border-radius: 24px; max-width: 600px; margin: auto;">
+                    <h1 style="color: #1e40af; text-transform: uppercase;">IMATEC SOFTWARE</h1>
+                    <p>A sua empresa <b>${empresaNome}</b> foi registada com sucesso.</p>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #eee;">
+                        <p><b>E-mail de Acesso:</b> ${email}</p>
+                        <p><b>Palavra-passe:</b> ${pass}</p>
+                    </div>
+                    <p style="font-size: 11px; color: #64748b; margin-top: 20px;">Este é um e-mail automático do sistema ERP Multi-Empresa.</p>
+                </div>
+            `
+        });
+    } catch (err) {
+        console.error("[IMATEC] Erro ao tentar disparar e-mail:", err);
+    }
 };
 
-// 4. MÓDULO DE REGISTO
-const showRegister = () => {
-    render(`
-    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100 animate-in fade-in duration-500">
-        <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
-            <div class="bg-blue-900 p-10 text-center relative">
-                <div class="w-16 h-16 bg-blue-500 rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-3xl mb-4 shadow-xl">I</div>
-                <h1 class="text-xl font-bold text-white uppercase tracking-tight">Registar Empresa</h1>
-                <p class="text-blue-300 text-[10px] mt-2 font-black uppercase tracking-widest">Configuração Multi-Empresa</p>
-            </div>
-            <form id="registerForm" class="p-8 space-y-4">
-                <div class="space-y-1">
-                    <label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Designação Social</label>
-                    <input type="text" id="regNome" required placeholder="NOME DA EMPRESA" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">NIF Fiscal</label>
-                    <input type="text" id="regNif" required placeholder="540XXXXXXXX" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Email do Administrador</label>
-                    <input type="email" id="regEmail" required placeholder="admin@empresa.com" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Palavra-passe de Acesso</label>
-                    <input type="password" id="regPass" required placeholder="••••••••" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                </div>
-                
-                <button type="submit" id="regBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all uppercase text-xs tracking-widest flex items-center justify-center space-x-2 mt-4">
-                    <span id="regBtnText">Finalizar Registo</span>
-                    <div id="regLoader" class="hidden w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                </button>
-                <p class="text-center text-[10px] text-gray-400 mt-4 font-bold uppercase tracking-widest">
-                    Já tem acesso? <button type="button" onclick="window.showLogin()" class="text-blue-600 hover:underline">Entrar aqui</button>
-                </p>
-            </form>
-        </div>
-    </div>
-    `);
-
-    document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nome = (document.getElementById('regNome') as HTMLInputElement).value;
-        const nif = (document.getElementById('regNif') as HTMLInputElement).value;
-        const email = (document.getElementById('regEmail') as HTMLInputElement).value;
-        const pass = (document.getElementById('regPass') as HTMLInputElement).value;
-        
-        const btnText = document.getElementById('regBtnText');
-        const btnLoader = document.getElementById('regLoader');
-        btnText?.classList.add('hidden');
-        btnLoader?.classList.remove('hidden');
-
-        try {
-            // 1. Criar Empresa (USANDO NOMES DE COLUNAS REAIS DO SEU SUPABASE)
-            const { data: empresa, error: empError } = await supabase
-                .from('empresas')
-                .insert([{ 
-                    nome_empresa: nome, 
-                    nif_empresa: nif, 
-                    email: email 
-                }])
-                .select()
-                .single();
-
-            if (empError) throw empError;
-
-            // 2. Criar Utilizador associado
-            const { error: userError } = await supabase
-                .from('usuarios')
-                .insert([{ 
-                    empresa_id: empresa.id, 
-                    email: email, 
-                    password: pass, 
-                    nome: 'Administrador Principal',
-                    role: 'admin'
-                }]);
-
-            if (userError) throw userError;
-
-            // 3. Enviar Email de Ativação
-            sendActivationEmail(email, nome);
-
-            alert("Sucesso! Empresa registada. Verifique o seu email e faça login.");
-            showLogin();
-        } catch (err: any) {
-            console.error(err);
-            alert("Erro ao registar: " + err.message);
-        } finally {
-            btnText?.classList.remove('hidden');
-            btnLoader?.classList.add('hidden');
-        }
-    });
-};
-
-// 5. MÓDULO DE LOGIN
+// 3. PÁGINA DE LOGIN
 const showLogin = () => {
     render(`
     <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100 animate-in fade-in duration-500">
         <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
-            <div class="bg-blue-900 p-12 text-center relative">
-                <div class="w-16 h-16 bg-blue-500 rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-3xl mb-4 shadow-xl">I</div>
-                <h1 class="text-2xl font-bold text-white font-lato uppercase tracking-tight">IMATEC SOFTWARE</h1>
-                <p class="text-blue-300 text-[10px] mt-2 font-black uppercase tracking-widest">Painel de Controlo ERP</p>
+            <div class="bg-blue-900 p-10 text-center">
+                <div class="w-14 h-14 bg-blue-500 rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg">I</div>
+                <h1 class="text-white font-bold text-xl uppercase tracking-tighter">IMATEC SOFTWARE</h1>
+                <p class="text-blue-300 text-[10px] font-black uppercase tracking-widest mt-1">Painel Multi-Empresa</p>
             </div>
-            <form id="loginForm" class="p-10 space-y-6">
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Utilizador (Email)</label>
-                    <input type="email" id="email" required class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="exemplo@empresa.com">
+            <form id="loginForm" class="p-10 space-y-4">
+                <div class="space-y-1">
+                   <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">E-mail do Administrador</label>
+                   <input type="email" id="email" required placeholder="ADMIN@EMPRESA.COM" class="w-full px-5 py-4 bg-gray-50 border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Palavra-passe</label>
-                    <input type="password" id="password" required class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="••••••••">
+                <div class="space-y-1">
+                   <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Palavra-passe</label>
+                   <input type="password" id="password" required placeholder="••••••••" class="w-full px-5 py-4 bg-gray-50 border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 </div>
-                <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-500/20 transition-all uppercase text-xs tracking-widest">Aceder ao Sistema</button>
-                <p class="text-center text-[10px] text-gray-400 mt-4 font-bold uppercase tracking-widest">
-                    Sem registo? <button type="button" onclick="window.showRegister()" class="text-blue-600 hover:underline">Criar Nova Empresa</button>
+                <button type="submit" id="loginSubmit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20">Entrar no ERP</button>
+                <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
+                    Ainda não tem conta? <button type="button" onclick="window.showRegister()" class="text-blue-600 hover:underline font-black">Registar Empresa</button>
                 </p>
             </form>
         </div>
@@ -162,8 +79,12 @@ const showLogin = () => {
 
     document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('loginSubmit') as HTMLButtonElement;
         const email = (document.getElementById('email') as HTMLInputElement).value;
         const pass = (document.getElementById('password') as HTMLInputElement).value;
+
+        btn.disabled = true;
+        btn.innerText = "A AUTENTICAR...";
 
         try {
             const { data: user, error } = await supabase
@@ -173,184 +94,215 @@ const showLogin = () => {
                 .eq('password', pass)
                 .single();
 
-            if (error || !user) throw new Error("Email ou palavra-passe incorretos.");
+            if (error || !user) throw new Error("Credenciais inválidas. Verifique o e-mail e a senha.");
 
-            localStorage.setItem('imatec_session', JSON.stringify({ 
-                user: { nome: user.nome, email: user.email }, 
-                empresa: user.empresas 
-            }));
-            
+            localStorage.setItem('imatec_session', JSON.stringify({ user, empresa: user.empresas }));
             initApp();
-        } catch (err: any) {
-            alert(err.message);
+        } catch (err: any) { 
+            alert(err.message); 
+            btn.disabled = false;
+            btn.innerText = "ENTRAR NO ERP";
         }
     });
 };
 
-// 6. DASHBOARD MULTI-EMPRESA
-const showDashboard = (user: any, empresa: any) => {
-    // Usamos empresa.nome_empresa pois é o nome da coluna no seu banco
-    const nomeExibicao = empresa.nome_empresa || empresa.nome || "Empresa IMATEC";
-    const nifExibicao = empresa.nif_empresa || empresa.nif || "---";
-
+// 4. PÁGINA DE REGISTO (CORREÇÃO DE CONSTRAINTS E ERROS)
+const showRegister = () => {
     render(`
-    <div class="flex h-screen bg-slate-50 overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="w-72 bg-blue-900 text-white flex flex-col shrink-0 shadow-2xl z-20">
-            <div class="p-8 border-b border-blue-800 flex items-center space-x-3">
-                <div class="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center font-bold text-xs">I</div>
-                <div class="font-bold tracking-tight text-xs uppercase">IMATEC SOFTWARE</div>
+    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100 animate-in fade-in duration-500">
+        <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
+            <div class="bg-blue-900 p-8 text-center text-white">
+                <h1 class="text-xl font-bold uppercase tracking-tight">Novo Registo Cloud</h1>
+                <p class="text-blue-300 text-[9px] uppercase font-bold tracking-widest">Multi-Company Setup</p>
             </div>
-            <nav class="flex-1 py-8 px-4 space-y-1.5">
-                <button onclick="window.navigate('home')" id="nav-home" class="nav-btn w-full flex items-center space-x-3 px-5 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-800 transition-all">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-400"></i> <span>Dashboard</span>
-                </button>
-                <button onclick="window.navigate('rh')" id="nav-rh" class="nav-btn w-full flex items-center space-x-3 px-5 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-800 transition-all">
-                    <i data-lucide="users" class="w-4 h-4 text-blue-400"></i> <span>Recursos Humanos</span>
-                </button>
-                <button onclick="window.navigate('faturas')" id="nav-faturas" class="nav-btn w-full flex items-center space-x-3 px-5 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-800 transition-all">
-                    <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i> <span>Faturação</span>
-                </button>
-            </nav>
-            <div class="p-6 bg-blue-950/40 border-t border-blue-800">
-                <div class="flex items-center space-x-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-xs border border-blue-400 shadow-inner">${user.nome.charAt(0)}</div>
-                    <div class="overflow-hidden">
-                        <p class="text-[10px] font-black truncate uppercase tracking-widest">${user.nome}</p>
-                        <p class="text-[8px] text-blue-400 truncate uppercase font-bold">${nomeExibicao}</p>
+            <form id="regForm" class="p-8 space-y-3">
+                <div class="space-y-1">
+                   <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Empresa</label>
+                   <input type="text" id="regNome" required placeholder="DESIGNÇÃO SOCIAL" class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm uppercase outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                       <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">NIF Fiscal</label>
+                       <input type="text" id="regNif" required placeholder="540XXXXXXXX" class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="space-y-1">
+                       <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Contacto Telefónico</label>
+                       <input type="text" id="regContacto" required placeholder="9XXXXXXXX" class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
-                <button onclick="window.logout()" class="w-full flex items-center justify-center space-x-2 py-4 bg-red-500/10 text-red-300 text-[9px] font-black uppercase tracking-widest rounded-2xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">
-                   <i data-lucide="log-out" class="w-3 h-3"></i> <span>Encerrar ERP</span>
-                </button>
+                <div class="space-y-1">
+                   <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 text-blue-600">Dimensão/Tipo de Empresa</label>
+                   <select id="regTipo" required class="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Selecione...</option>
+                        <option value="Pequena">Pequena Empresa (Micro)</option>
+                        <option value="Media">Média Empresa (PME)</option>
+                        <option value="Grande">Grande Empresa / Grupo</option>
+                   </select>
+                </div>
+                <div class="space-y-1">
+                   <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail do Administrador</label>
+                   <input type="email" id="regEmail" required placeholder="ADMIN@EMPRESA.COM" class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="space-y-1">
+                   <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Definir Palavra-passe</label>
+                   <input type="password" id="regPass" required placeholder="••••••••" class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" id="regSubmit" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl uppercase text-xs shadow-lg mt-2 hover:bg-emerald-700 transition-all">Ativar ERP Agora</button>
+                <button type="button" onclick="window.showLogin()" class="w-full text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-2">Já tenho uma conta</button>
+            </form>
+        </div>
+    </div>
+    `);
+
+    document.getElementById('regForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('regSubmit') as HTMLButtonElement;
+        btn.disabled = true;
+        btn.innerText = "A PROCESSAR...";
+
+        const nome = (document.getElementById('regNome') as HTMLInputElement).value;
+        const nif = (document.getElementById('regNif') as HTMLInputElement).value;
+        const contacto = (document.getElementById('regContacto') as HTMLInputElement).value;
+        const tipo = (document.getElementById('regTipo') as HTMLSelectElement).value;
+        const email = (document.getElementById('regEmail') as HTMLInputElement).value;
+        const pass = (document.getElementById('regPass') as HTMLInputElement).value;
+
+        try {
+            // 1. Inserir Empresa - GARANTINDO CAMPOS OBRIGATÓRIOS
+            const { data: emp, error: errEmp } = await supabase
+                .from('empresas')
+                .insert([{ 
+                    nome_empresa: nome, 
+                    nif_empresa: nif, 
+                    administrador: email, 
+                    contacto: contacto, 
+                    tipo_empresa: tipo, 
+                    email: email, 
+                    created_at: new Date()
+                }])
+                .select().single();
+
+            if (errEmp) {
+                if (errEmp.code === '23505') throw new Error("Este NIF já está registado no sistema.");
+                throw errEmp;
+            }
+
+            // 2. Criar Utilizador associado
+            const { error: errUser } = await supabase
+                .from('usuarios')
+                .insert([{ 
+                    empresa_id: emp.id, 
+                    email: email, 
+                    password: pass, 
+                    nome: 'Admin ' + nome,
+                    role: 'admin'
+                }]);
+
+            if (errUser) {
+                // Erro de e-mail duplicado
+                if (errUser.code === '23505') {
+                    throw new Error("Este e-mail já está em uso por outro administrador.");
+                }
+                throw errUser;
+            }
+            
+            // 3. Envio de E-mail (Seguro)
+            sendActivationEmail(email, nome, pass);
+
+            alert("Sucesso! A sua plataforma multi-empresa foi ativada. Faça login para começar.");
+            showLogin();
+        } catch (err: any) { 
+            alert("Erro no Registo: " + (err.message || "Ocorreu um erro inesperado. Verifique os dados."));
+            btn.disabled = false;
+            btn.innerText = "ATIVAR ERP AGORA";
+        }
+    });
+};
+
+// 5. DASHBOARD
+const showDashboard = (user: any, empresa: any) => {
+    const nomeExibicao = empresa.nome_empresa || "IMATEC ERP";
+    
+    render(`
+    <div class="flex h-screen bg-slate-50 overflow-hidden">
+        <aside class="w-64 bg-blue-900 text-white flex flex-col p-6 space-y-6 shrink-0 shadow-2xl">
+            <div class="font-black text-xs tracking-widest uppercase border-b border-blue-800 pb-6 flex items-center space-x-2">
+                <div class="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center text-[10px]">I</div>
+                <span>IMATEC SOFTWARE</span>
+            </div>
+            <nav class="flex-1 space-y-2">
+                <button onclick="window.navigate('home')" class="w-full text-left p-4 hover:bg-blue-800 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Visão Geral</button>
+                <button onclick="window.navigate('rh')" class="w-full text-left p-4 hover:bg-blue-800 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Recursos Humanos</button>
+            </nav>
+            <div class="pt-6 border-t border-blue-800">
+                <p class="text-[9px] font-black uppercase text-blue-400 mb-2 truncate">${nomeExibicao}</p>
+                <button onclick="window.logout()" class="w-full p-4 bg-red-500/10 text-red-300 rounded-2xl text-[10px] font-black uppercase border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">Terminar Sessão</button>
             </div>
         </aside>
-
-        <!-- Main -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="h-24 bg-white border-b flex items-center justify-between px-12 shrink-0 z-10 shadow-sm">
-                <div>
-                    <h2 id="pageTitle" class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Painel de Controlo</h2>
-                    <p class="text-[9px] text-blue-600 font-bold uppercase mt-1 tracking-widest">NIF Fiscal: ${nifExibicao}</p>
-                </div>
-                <div class="bg-blue-50 px-5 py-2.5 rounded-2xl border border-blue-100 flex items-center space-x-3">
-                    <div class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
-                    <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest">${nomeExibicao}</span>
+            <header class="h-20 bg-white border-b flex items-center justify-between px-10 shadow-sm shrink-0">
+                <h2 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Painel Administrativo Cloud</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
+                        <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest">ORG: ${nomeExibicao}</span>
+                    </div>
                 </div>
             </header>
-            <main id="mainContent" class="flex-1 overflow-y-auto p-12 bg-slate-50/50">
-                <!-- Conteúdo SPA -->
+            <main id="mainContent" class="flex-1 p-10 overflow-y-auto">
+                <!-- Conteúdo Dinâmico -->
             </main>
         </div>
     </div>
     `);
 
     (window as any).navigate = async (page: string) => {
-        const content = document.getElementById('mainContent');
-        const title = document.getElementById('pageTitle');
-        if (!content || !title) return;
-
-        content.innerHTML = `<div class="h-full flex items-center justify-center animate-pulse"><div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>`;
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('bg-blue-800', 'text-white'));
-        document.getElementById(`nav-${page}`)?.classList.add('bg-blue-800', 'text-white');
-
-        try {
-            switch(page) {
-                case 'home':
-                    title.innerText = "Dashboard Analítico";
-                    content.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                        <div class="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Sessão Ativa</h3>
-                            <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
-                                <div>
-                                    <p class="text-xl font-black text-slate-800">CONECTADO</p>
-                                    <p class="text-[9px] text-slate-400 font-bold uppercase">Base de Dados Supabase</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Empresa Isolada</h3>
-                            <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"><i data-lucide="building-2" class="w-6 h-6"></i></div>
-                                <div>
-                                    <p class="text-sm font-black text-slate-800 truncate">${nomeExibicao}</p>
-                                    <p class="text-[9px] text-slate-400 font-bold uppercase">Isolamento Multi-empresa</p>
-                                </div>
-                            </div>
-                        </div>
+        const content = document.getElementById('mainContent')!;
+        if (page === 'home') {
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-700">
+                    <div class="bg-white p-10 rounded-[2.5rem] border shadow-sm">
+                        <p class="text-[10px] font-black uppercase text-slate-400 mb-2">Detalhes da Empresa</p>
+                        <h3 class="text-2xl font-black text-slate-800 uppercase">${nomeExibicao}</h3>
+                        <p class="text-xs text-blue-600 mt-4 font-bold">NIF: ${empresa.nif_empresa}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">E-mail: ${empresa.email}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Contacto: ${empresa.contacto}</p>
+                        <p class="text-[10px] text-emerald-600 font-bold uppercase mt-4">Tipo: ${empresa.tipo_empresa}</p>
                     </div>
-                    <div class="mt-12 bg-blue-900 rounded-[3.5rem] p-16 text-white shadow-2xl relative overflow-hidden">
-                        <div class="relative z-10">
-                            <h2 class="text-4xl font-black uppercase font-lato leading-tight">Bem-vindo à Gestão Cloud</h2>
-                            <p class="text-blue-200 text-sm mt-6 max-w-2xl leading-relaxed">O sistema IMATEC está a operar no ambiente seguro da empresa <b>${nomeExibicao}</b>. Todos os registos são filtrados automaticamente pelo seu ID de empresa único.</p>
-                        </div>
-                        <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-800 rounded-full opacity-30 blur-3xl"></div>
+                    <div class="bg-blue-900 p-10 rounded-[2.5rem] text-white shadow-xl">
+                        <p class="text-[10px] font-black uppercase opacity-60 mb-2 tracking-widest">Isolamento Cloud</p>
+                        <p class="text-sm font-medium">Os seus dados estão seguros. Cada empresa possui o seu próprio identificador (UUID) na nossa base de dados.</p>
+                        <p class="text-[10px] text-blue-300 mt-8 font-mono">ID: ${empresa.id}</p>
                     </div>
-                    `;
-                    break;
-
-                case 'rh':
-                    title.innerText = "Recursos Humanos";
-                    const { data: staff } = await supabase.from('funcionarios').select('*').eq('empresa_id', empresa.id);
-                    content.innerHTML = `
-                    <div class="space-y-8 animate-in fade-in duration-500">
-                        <div class="bg-white rounded-[3rem] border border-gray-100 overflow-hidden shadow-sm">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-400 font-black uppercase tracking-[0.2em] border-b">
-                                    <tr><th class="px-10 py-7">Nome do Trabalhador</th><th class="px-10 py-7">Cargo / Função</th><th class="px-10 py-7 text-right">Vencimento</th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50">
-                                    ${staff?.length ? staff.map((f:any) => `<tr><td class="px-10 py-6 font-bold text-slate-800 uppercase">${f.nome}</td><td class="px-10 py-6 text-slate-500">${f.cargo || '---'}</td><td class="px-10 py-6 text-right font-black">${(f.salario_base || 0).toLocaleString()} Kz</td></tr>`).join('') : '<tr><td colspan="3" class="px-10 py-24 text-center text-gray-400 font-bold uppercase tracking-widest">Nenhum registo encontrado para esta empresa.</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
+                </div>
+            `;
+        } else if (page === 'rh') {
+            const { data } = await supabase.from('funcionarios').select('*').eq('empresa_id', empresa.id);
+            content.innerHTML = `
+                <div class="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden animate-in fade-in duration-500">
+                    <div class="p-8 border-b flex justify-between items-center">
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quadro de Pessoal (Isolado)</h3>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase">Novo Colaborador</button>
                     </div>
-                    `;
-                    break;
-
-                case 'faturas':
-                    title.innerText = "Faturação Certificada";
-                    const { data: vnds } = await supabase.from('vendas').select('*').eq('empresa_id', empresa.id);
-                    content.innerHTML = `
-                    <div class="space-y-8 animate-in fade-in duration-500">
-                        <div class="bg-white rounded-[3rem] border border-gray-100 overflow-hidden shadow-sm">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-400 font-black uppercase tracking-[0.2em] border-b">
-                                    <tr><th class="px-10 py-7">Nº Doc</th><th class="px-10 py-7">Cliente</th><th class="px-10 py-7 text-right">Valor Total</th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50">
-                                    ${vnds?.length ? vnds.map((v:any) => `<tr><td class="px-10 py-6 font-bold text-blue-600 uppercase">${v.numero}</td><td class="px-10 py-6 text-slate-800 font-bold">${v.cliente}</td><td class="px-10 py-6 text-right font-black">${(v.total || 0).toLocaleString()} Kz</td></tr>`).join('') : '<tr><td colspan="3" class="px-10 py-24 text-center text-gray-400 font-bold uppercase tracking-widest">Nenhuma fatura registada nesta empresa.</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    `;
-                    break;
-            }
-        } catch (err) {
-            console.error(err);
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-gray-50 border-b">
+                            <tr><th class="p-8 text-[10px] font-black uppercase text-slate-400">Trabalhador</th><th class="p-8 text-[10px] font-black uppercase text-slate-400 text-right">Vencimento</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            ${data?.length ? data.map(f => `<tr><td class="p-8 font-black text-slate-800 uppercase">${f.nome}</td><td class="p-8 text-right font-black text-blue-600">${f.salario_base.toLocaleString()} Kz</td></tr>`).join('') : '<tr><td colspan="2" class="p-24 text-center font-bold text-gray-400 uppercase tracking-widest">Sem funcionários nesta empresa.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>`;
         }
-
-        if ((window as any).lucide) (window as any).lucide.createIcons();
     };
-
-    (window as any).logout = () => {
-        localStorage.removeItem('imatec_session');
-        initApp();
-    };
-
     (window as any).navigate('home');
 };
 
-// 7. INICIALIZAÇÃO DEFINITIVA
 const initApp = () => {
-    const session = localStorage.getItem('imatec_session');
-    
     (window as any).showRegister = showRegister;
     (window as any).showLogin = showLogin;
+    (window as any).logout = () => { localStorage.removeItem('imatec_session'); initApp(); };
 
+    const session = localStorage.getItem('imatec_session');
     if (session) {
         try {
             const { user, empresa } = JSON.parse(session);
@@ -364,8 +316,4 @@ const initApp = () => {
     }
 };
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
-} else {
-    initApp();
-}
+initApp();
