@@ -1,59 +1,47 @@
 
 /**
- * IMATEC SOFTWARE - Motor de Inicialização (EntryPoint)
+ * IMATEC SOFTWARE - Entry Point (Vanilla Logic)
  */
 import { renderLogin } from './js/auth.js';
 import { renderDashboardLayout } from './js/dashboard.js';
 
 /**
- * Função principal de arranque
+ * Função central de roteamento interno
  */
-const startApp = () => {
+export const initApp = () => {
     console.log("[IMATEC] Motor inicializado.");
 
-    // Garante que o container root #app existe
-    let app = document.getElementById('app');
-    if (!app) {
-        console.warn("[IMATEC] Root #app não encontrado. Criando...");
-        app = document.createElement('div');
-        app.id = 'app';
-        document.body.prepend(app);
-    }
+    const app = document.getElementById('app');
+    if (!app) return;
 
     // Limpa o loader inicial
     app.innerHTML = '';
 
-    // Verifica sessão multi-empresa no LocalStorage
+    // Tenta recuperar sessão existente
     const sessionData = localStorage.getItem('imatec_session');
     
     if (sessionData) {
         try {
             const { user, empresa } = JSON.parse(sessionData);
-            if (!user || !empresa) throw new Error("Sessão corrompida");
-            
-            console.log(`[IMATEC] Sessão encontrada para: ${empresa.nome}`);
+            console.log(`[IMATEC] Bem-vindo de volta: ${user.nome} (${empresa.nome})`);
             renderDashboardLayout(user, empresa);
-        } catch (err) {
-            console.error("[IMATEC] Erro ao processar sessão:", err);
+        } catch (e) {
+            console.error("[IMATEC] Erro ao carregar sessão:", e);
             localStorage.removeItem('imatec_session');
             renderLogin();
         }
     } else {
-        console.log("[IMATEC] Nenhuma sessão ativa. Carregando portal de acesso.");
+        console.log("[IMATEC] Nenhuma sessão encontrada. Abrindo Login.");
         renderLogin();
     }
 };
 
-// Garante execução após o DOM estar pronto
+// Inicializa quando o DOM estiver pronto
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startApp);
+    document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    // Caso o script carregue após o DOMContentLoaded (async/defer)
-    startApp();
+    initApp();
 }
 
-// Captura de erros globais
-window.onerror = function(msg, url, line) {
-    console.error(`[IMATEC CRITICAL]: ${msg} em ${url}:${line}`);
-    return false;
-};
+// Expõe globalmente para que outros módulos (como logout ou login) possam chamar se necessário
+(window as any).initApp = initApp;
