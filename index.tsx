@@ -1,47 +1,42 @@
 
-/**
- * IMATEC SOFTWARE - Entry Point (Vanilla Logic)
- */
 import { renderLogin } from './js/auth.js';
 import { renderDashboardLayout } from './js/dashboard.js';
 
 /**
- * Função central de roteamento interno
+ * Função principal de verificação e roteamento
  */
-export const initApp = () => {
-    console.log("[IMATEC] Motor inicializado.");
-
+export const checkAuthAndRender = () => {
     const app = document.getElementById('app');
     if (!app) return;
 
-    // Limpa o loader inicial
-    app.innerHTML = '';
-
-    // Tenta recuperar sessão existente
+    // Recupera sessão multiempresa
     const sessionData = localStorage.getItem('imatec_session');
     
     if (sessionData) {
         try {
             const { user, empresa } = JSON.parse(sessionData);
-            console.log(`[IMATEC] Bem-vindo de volta: ${user.nome} (${empresa.nome})`);
+            if (!user || !empresa) throw new Error("Sessão incompleta");
+            
+            console.log(`[IMATEC] Sessão ativa para empresa: ${empresa.nome}`);
             renderDashboardLayout(user, empresa);
         } catch (e) {
-            console.error("[IMATEC] Erro ao carregar sessão:", e);
+            console.error("[IMATEC] Erro na sessão, voltando ao login.", e);
             localStorage.removeItem('imatec_session');
             renderLogin();
         }
     } else {
-        console.log("[IMATEC] Nenhuma sessão encontrada. Abrindo Login.");
+        console.log("[IMATEC] Sem sessão. Renderizando Login.");
         renderLogin();
     }
 };
 
-// Inicializa quando o DOM estiver pronto
+// Inicializa o app assim que o script carregar
+// O ambiente importará este arquivo automaticamente como módulo
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
+    document.addEventListener('DOMContentLoaded', checkAuthAndRender);
 } else {
-    initApp();
+    checkAuthAndRender();
 }
 
-// Expõe globalmente para que outros módulos (como logout ou login) possam chamar se necessário
-(window as any).initApp = initApp;
+// Expõe globalmente para transições SPA
+(window as any).checkAuthAndRender = checkAuthAndRender;
