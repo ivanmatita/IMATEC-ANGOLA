@@ -23,13 +23,20 @@
 </head>
 <body class="min-h-screen bg-slate-50 font-inter">
     <div id="app">
-        <!-- Loader inicial de fallback -->
+        <!-- Loader inicial robusto: Se o JS falhar, este loader permanece visível para indicar erro de carregamento -->
         <div class="h-screen w-full flex items-center justify-center bg-white">
-            <div class="flex flex-col items-center space-y-4">
-                <div class="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest animate-pulse">Carregando Motor IMATEC...</p>
+            <div class="flex flex-col items-center space-y-6">
+                <div class="relative">
+                    <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center font-bold text-blue-600 text-xs">I</div>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] font-black text-slate-800 uppercase tracking-[0.3em] animate-pulse">Iniciando IMATEC SOFTWARE</p>
+                    <p class="text-[9px] text-slate-400 mt-2 font-medium">Sincronizando módulos multi-empresa...</p>
+                </div>
             </div>
         </div>
     </div>
+    <!-- O script index.tsx é injetado automaticamente pelo ambiente de execução -->
 </body>
 </html>
