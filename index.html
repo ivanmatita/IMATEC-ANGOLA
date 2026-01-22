@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-ao">
 <head>
@@ -24,11 +25,10 @@
 }
 </script>
 <style>
-    /* Loader de transição ultra-rápida */
     #initial-loader {
         position: fixed;
         inset: 0;
-        background: white;
+        background: #0f172a; /* Slate 900 */
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -37,27 +37,27 @@
         transition: opacity 0.5s ease-out;
     }
     .loader-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #2563eb;
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(255,255,255,0.1);
+        border-top: 4px solid #3b82f6;
         border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        animation: spin 1s linear infinite;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body class="min-h-screen bg-slate-50 font-inter text-slate-800">
-    <!-- Loader Inicial Robusto -->
+    <!-- Loader Anti-Página Branca -->
     <div id="initial-loader">
         <div class="loader-spinner"></div>
-        <p class="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Iniciando IMATEC SOFTWARE...</p>
+        <p class="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 animate-pulse">A iniciar IMATEC SOFTWARE Cloud...</p>
+        <p class="mt-2 text-[8px] text-slate-500 uppercase tracking-widest">GitHub Pages Deployment</p>
     </div>
 
     <div id="app"></div>
 
     <script>
-        // Função global para remover o loader assim que o App.tsx montar
         window.removeInitialLoader = function() {
             const loader = document.getElementById('initial-loader');
             if (loader) {
@@ -65,8 +65,9 @@
                 setTimeout(() => loader.remove(), 500);
             }
         };
-        // Fallback: remove o loader se algo demorar mais de 6 segundos para não travar a UI
-        setTimeout(window.removeInitialLoader, 6000);
+        // Fallback de 8s para garantir renderização
+        setTimeout(window.removeInitialLoader, 8000);
     </script>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

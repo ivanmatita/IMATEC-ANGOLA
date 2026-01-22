@@ -1,7 +1,8 @@
 
--- SCRIPT DE CONFIGURAÇÃO IMATEC ERP - MULTI-COMPANY (CORRIGIDO)
+-- SCRIPT DE CONFIGURAÇÃO IMATEC SOFTWARE - MULTI-COMPANY
+-- Execute este script no SQL Editor do seu projeto Supabase
 
--- 1. Extensão para UUIDs
+-- 1. Extensões Necessárias
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. Tabela de Empresas
@@ -9,53 +10,43 @@ CREATE TABLE IF NOT EXISTS empresas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome_empresa TEXT NOT NULL,
     nif_empresa TEXT NOT NULL UNIQUE,
-    administrador TEXT NOT NULL, -- Email do gestor
+    administrador TEXT NOT NULL, -- Email do gestor principal
     contacto TEXT NOT NULL,
     tipo_empresa TEXT NOT NULL DEFAULT 'Pequena',
     email TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Tabela de Utilizadores (Perfis vinculado ao Auth)
+-- 3. Tabela de Utilizadores (Mapeia Username -> Email Auth)
 CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Pode ser o mesmo ID do auth.users
+    id UUID PRIMARY KEY, -- ID sincronizado com auth.users
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL, -- Mantido para compatibilidade, mas o Auth usa o dele
+    password TEXT NOT NULL, -- Cópia apenas para consulta de interface, o Auth gere a real
     nome TEXT NOT NULL,
     role TEXT DEFAULT 'admin',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    CONSTRAINT username_no_at CHECK (username NOT LIKE '%@%')
 );
 
--- 4. Tabela de Funcionários (Exemplo isolado)
+-- 4. Tabelas de Negócio (Exemplos de Isolamento)
 CREATE TABLE IF NOT EXISTS funcionarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     cargo TEXT,
     salario_base DECIMAL(12,2) DEFAULT 0,
-    contacto TEXT,
-    estado TEXT DEFAULT 'Ativo',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Tabela de Faturação (Exemplo isolado)
-CREATE TABLE IF NOT EXISTS faturacao (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
-    numero TEXT NOT NULL,
-    cliente TEXT NOT NULL,
-    total DECIMAL(12,2) DEFAULT 0,
-    estado TEXT DEFAULT 'Pago',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Ativar RLS para segurança multi-empresa
+-- 5. Ativar Row Level Security (RLS)
 ALTER TABLE empresas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE faturacao ENABLE ROW LEVEL SECURITY;
 
--- Exemplo de política: Utilizador só vê dados da sua empresa_id
--- CREATE POLICY "Isolamento por Empresa" ON funcionarios FOR ALL USING (empresa_id = (SELECT empresa_id FROM usuarios WHERE email = auth.jwt()->>'email'));
+-- Políticas de Isolamento (O utilizador só vê o que pertence à sua empresa)
+CREATE POLICY "Empresas: Ver apenas a própria" ON empresas FOR SELECT USING (id IN (SELECT empresa_id FROM usuarios WHERE id = auth.uid()));
+CREATE POLICY "Usuarios: Ver apenas da mesma empresa" ON usuarios FOR SELECT USING (empresa_id IN (SELECT empresa_id FROM usuarios WHERE id = auth.uid()));
+CREATE POLICY "Funcionários: Isolamento total" ON funcionarios FOR ALL USING (empresa_id IN (SELECT empresa_id FROM usuarios WHERE id = auth.uid()));

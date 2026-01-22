@@ -23,78 +23,72 @@ const Register: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    const emailNormalizado = formData.email.toLowerCase().trim();
-    const usernameNormalizado = formData.username.toLowerCase().trim().replace(/\s/g, '');
+    const emailNorm = formData.email.toLowerCase().trim();
+    const userNorm = formData.username.toLowerCase().trim().replace(/\s/g, '');
+
+    // Validação de Username (Proibido @)
+    if (userNorm.includes('@')) {
+      alert("O Nome de Utilizador não pode conter o símbolo '@'. Utilize apenas letras, números ou sublinhados.");
+      setLoading(false);
+      return;
+    }
 
     try {
-      // 1. Validação Prévia de NIF (Evita erro 23505 duplicate key)
-      const { data: nifCheck } = await supabase
-        .from('empresas')
-        .select('nif_empresa')
-        .eq('nif_empresa', formData.nif)
-        .single();
+      // 1. Verificações Prévias de Disponibilidade
+      const { data: nifCheck } = await supabase.from('empresas').select('id').eq('nif_empresa', formData.nif).single();
+      if (nifCheck) throw new Error("Este NIF já está registado em nossa base de dados.");
 
-      if (nifCheck) throw new Error("Já existe uma empresa registada com este NIF.");
+      const { data: userCheck } = await supabase.from('usuarios').select('id').eq('username', userNorm).single();
+      if (userCheck) throw new Error("Este nome de utilizador já está a ser utilizado.");
 
-      // 2. Validação Prévia de Username
-      const { data: userCheck } = await supabase
-        .from('usuarios')
-        .select('username')
-        .eq('username', usernameNormalizado)
-        .single();
-
-      if (userCheck) throw new Error("Este nome de utilizador já está em uso.");
-
-      // 3. Registo no Supabase Auth (DISPARA E-MAIL SMTP)
+      // 2. Criar Autenticação Oficial (Dispara SMTP)
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: emailNormalizado,
+        email: emailNorm,
         password: formData.senha,
         options: {
           emailRedirectTo: window.location.origin + window.location.pathname,
-          data: {
-            username: usernameNormalizado,
-            company_name: formData.nome
-          }
+          data: { username: userNorm }
         }
       });
 
       if (authError) throw authError;
+      if (!authData.user) throw new Error("Não foi possível criar o perfil de autenticação.");
 
-      // 4. Criar Empresa na Tabela
+      // 3. Criar a Empresa
       const { data: empresa, error: empError } = await supabase
         .from('empresas')
         .insert([{
           nome_empresa: formData.nome.toUpperCase(),
           nif_empresa: formData.nif,
-          administrador: emailNormalizado,
+          administrador: emailNorm,
           contacto: formData.contacto,
           tipo_empresa: formData.tipo,
-          email: emailNormalizado
+          email: emailNorm
         }])
         .select()
         .single();
 
       if (empError) throw empError;
 
-      // 5. Vincular Utilizador à Empresa
-      const { error: profileError } = await supabase
+      // 4. Criar o Utilizador vinculado à Empresa
+      const { error: userError } = await supabase
         .from('usuarios')
         .insert([{
-          id: authData.user?.id, // Sincroniza ID com Auth
+          id: authData.user.id, // Sincronização vital
           empresa_id: empresa.id,
-          username: usernameNormalizado,
-          email: emailNormalizado,
-          password: formData.senha, // Para compatibilidade de exibição
-          nome: 'Gestor ' + formData.nome,
+          username: userNorm,
+          email: emailNorm,
+          password: formData.senha,
+          nome: 'Administrador ' + formData.nome,
           role: 'admin'
         }]);
 
-      if (profileError) throw profileError;
+      if (userError) throw userError;
 
       setSuccess(true);
-      setTimeout(() => navigate(AppRoute.LOGIN), 4000);
+      setTimeout(() => navigate(AppRoute.LOGIN), 5000);
     } catch (err: any) {
-      alert("Falha no Registo: " + (err.message || "Erro desconhecido."));
+      alert("Falha no Registo: " + (err.message || "Verifique a ligação à internet."));
     } finally {
       setLoading(false);
     }
@@ -102,35 +96,40 @@ const Register: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white p-12 rounded-[2.5rem] shadow-2xl text-center space-y-6">
-          <CheckCircle className="w-20 h-20 text-emerald-500 mx-auto" />
-          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Verifique o seu E-mail</h1>
-          <p className="text-slate-500 text-sm">A conta foi criada. Enviamos um link de ativação via SMTP para <b>{formData.email}</b>. Confirme para aceder.</p>
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-in zoom-in-95 duration-500">
+        <div className="max-w-md w-full bg-white p-12 rounded-[2.5rem] shadow-2xl text-center space-y-6 border border-emerald-100">
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+            <CheckCircle className="w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Verifique o E-mail</h1>
+          <p className="text-slate-500 text-sm leading-relaxed">
+            A plataforma para <b>{formData.nome.toUpperCase()}</b> foi criada. 
+            Enviamos um link de ativação para <b>{formData.email}</b> via SMTP seguro.
+          </p>
           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Utilizador:</p>
+            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Aceda com:</p>
             <p className="text-sm font-bold text-blue-900 mt-1">@{formData.username.toLowerCase()}</p>
           </div>
-          <p className="text-[10px] text-gray-400 animate-pulse font-black uppercase">Redirecionando...</p>
+          <p className="text-[10px] text-gray-400 animate-pulse font-black uppercase">Redirecionando para o login...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-in fade-in duration-500">
       <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
         <div className="bg-blue-900 p-8 text-center text-white">
-          <h1 className="text-2xl font-bold uppercase tracking-tight">Setup Cloud IMATEC</h1>
-          <p className="text-blue-300 text-[10px] uppercase font-bold tracking-widest mt-1">Registo Multi-Empresa</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tight">Registar Empresa</h1>
+          <p className="text-blue-300 text-[10px] uppercase font-bold tracking-widest mt-1">Setup Cloud IMATEC Multi-Company</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Empresa</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Entidade</label>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input required className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Ex: IMATEC Tecnologia" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+              <input required className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500 uppercase transition-all" placeholder="Ex: IMATEC Tecnologia" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
             </div>
           </div>
 
@@ -140,36 +139,43 @@ const Register: React.FC = () => {
               <input required className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="540XXXXXXXX" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value})} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>
+              <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Utilizador</label>
               <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-                <input required className="w-full pl-8 pr-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-sm font-bold" placeholder="gestor_exemplo" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-400" />
+                <input required className="w-full pl-8 pr-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-sm font-bold text-blue-900" placeholder="Sem @" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
               </div>
             </div>
           </div>
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail Administrativo</label>
-            <input required type="email" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="admin@empresa.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input required type="email" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="admin@empresa.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+            </div>
           </div>
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Palavra-passe</label>
-            <input required type="password" minLength={6} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input required type="password" minLength={6} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" value={formData.senha} onChange={e => setFormData({...formData, senha: e.target.value})} />
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-700 transition-all disabled:opacity-50 uppercase text-xs tracking-widest mt-4">
-            {loading ? 'A PROCESSAR...' : 'ATIVAR ERP AGORA'}
+            {loading ? 'A CRIAR AMBIENTE...' : 'ATIVAR ERP CLOUD'}
           </button>
           
-          <div className="text-center pt-2">
-            <Link to={AppRoute.LOGIN} className="text-[10px] text-gray-400 font-bold uppercase tracking-widest hover:text-blue-600">Voltar ao Login</Link>
+          <div className="flex items-center justify-center space-x-2 pt-2">
+             <ArrowLeft className="w-3 h-3 text-gray-400" />
+             <Link to={AppRoute.LOGIN} className="text-[10px] text-gray-400 font-bold uppercase tracking-widest hover:text-blue-600">Voltar ao Login</Link>
           </div>
         </form>
 
         <div className="p-6 bg-slate-50 border-t flex items-start space-x-3">
             <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[9px] text-gray-500 leading-relaxed font-medium">O isolamento multi-empresa é garantido pelo empresa_id. O e-mail de ativação será enviado via Supabase SMTP.</p>
+            <p className="text-[9px] text-gray-500 leading-relaxed font-medium uppercase font-bold tracking-tight">O sistema enviará um e-mail de ativação via Supabase SMTP. Username sem "@" obrigatório.</p>
         </div>
       </div>
     </div>
