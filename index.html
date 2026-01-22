@@ -5,54 +5,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMATEC SOFTWARE - Multi-Company ERP</title>
+    
+    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="./css/style.css">
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.475.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0",
-    "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
-<style>
-    #initial-loader {
-        position: fixed;
-        inset: 0;
-        background: #0f172a; /* Slate 900 */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        transition: opacity 0.5s ease-out;
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "react-router-dom": "https://esm.sh/react-router-dom@7.1.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
+        "recharts": "https://esm.sh/recharts@3.7.0?external=react",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+      }
     }
-    .loader-spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid rgba(255,255,255,0.1);
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
+    </script>
+
+    <style>
+        /* Reset de Visibilidade Crítico */
+        html, body {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+
+        #initial-loader {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease-out;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #error-display {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 10001;
+            padding: 20px;
+            text-align: center;
+            font-family: sans-serif;
+            flex-direction: column;
+            justify-content: center;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-50 font-inter text-slate-800">
-    <!-- Loader Anti-Página Branca -->
+<body>
+    <div id="error-display">
+        <h1 style="color: #e11d48; font-size: 1.25rem; font-weight: 900;">ERRO DE INICIALIZAÇÃO</h1>
+        <p style="color: #64748b; font-size: 0.875rem; margin-top: 10px;">Verifique a consola do navegador (F12) para detalhes.</p>
+        <button onclick="window.location.reload()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">TENTAR NOVAMENTE</button>
+    </div>
+
     <div id="initial-loader">
-        <div class="loader-spinner"></div>
-        <p class="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 animate-pulse">A iniciar IMATEC SOFTWARE Cloud...</p>
-        <p class="mt-2 text-[8px] text-slate-500 uppercase tracking-widest">GitHub Pages Deployment</p>
+        <div class="spinner"></div>
+        <div class="mt-6 text-center">
+            <h2 style="color: white; font-size: 10px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase;">IMATEC SOFTWARE</h2>
+            <p style="color: #3b82f6; font-size: 8px; font-weight: 900; text-transform: uppercase; margin-top: 5px; animation: pulse 2s infinite;">A carregar módulos cloud...</p>
+        </div>
     </div>
 
     <div id="app"></div>
@@ -62,12 +95,20 @@
             const loader = document.getElementById('initial-loader');
             if (loader) {
                 loader.style.opacity = '0';
-                setTimeout(() => loader.remove(), 500);
+                setTimeout(() => loader.remove(), 400);
             }
         };
-        // Fallback de 8s para garantir renderização
-        setTimeout(window.removeInitialLoader, 8000);
+
+        // Captura falhas de carregamento de módulos (Causa comum de isTrusted: true)
+        window.addEventListener('error', function(e) {
+            if (e.message.toLowerCase().includes('script error') || e.target.tagName === 'SCRIPT') {
+                console.error('[IMATEC] Falha Crítica ao carregar ficheiro:', e.target.src || e.message);
+                document.getElementById('error-display').style.display = 'flex';
+            }
+        }, true);
     </script>
+    
+    <!-- Ponto de entrada explícito -->
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

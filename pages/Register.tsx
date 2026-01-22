@@ -24,37 +24,41 @@ const Register: React.FC = () => {
     setLoading(true);
 
     const emailNorm = formData.email.toLowerCase().trim();
+    // Limpeza rigorosa do username
     const userNorm = formData.username.toLowerCase().trim().replace(/\s/g, '');
 
-    // Validação de Username (Proibido @)
+    // 1. Validação OBRIGATÓRIA: Username não pode ter @
     if (userNorm.includes('@')) {
-      alert("O Nome de Utilizador não pode conter o símbolo '@'. Utilize apenas letras, números ou sublinhados.");
+      alert("ERRO: O Nome de Utilizador NÃO pode conter o símbolo '@'. O e-mail deve ser colocado apenas no campo 'E-mail Administrativo'.");
       setLoading(false);
       return;
     }
 
     try {
-      // 1. Verificações Prévias de Disponibilidade
+      // 2. Verificações Prévias na Base de Dados (Isolamento)
       const { data: nifCheck } = await supabase.from('empresas').select('id').eq('nif_empresa', formData.nif).single();
-      if (nifCheck) throw new Error("Este NIF já está registado em nossa base de dados.");
+      if (nifCheck) throw new Error("Já existe uma empresa registada com este NIF.");
 
       const { data: userCheck } = await supabase.from('usuarios').select('id').eq('username', userNorm).single();
-      if (userCheck) throw new Error("Este nome de utilizador já está a ser utilizado.");
+      if (userCheck) throw new Error("Este nome de utilizador já está em uso por outro gestor.");
 
-      // 2. Criar Autenticação Oficial (Dispara SMTP)
+      // 3. Criar Conta no Supabase Auth (Isto dispara o e-mail via SMTP do Supabase)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailNorm,
         password: formData.senha,
         options: {
           emailRedirectTo: window.location.origin + window.location.pathname,
-          data: { username: userNorm }
+          data: { 
+            username: userNorm,
+            company_name: formData.nome 
+          }
         }
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Não foi possível criar o perfil de autenticação.");
+      if (!authData.user) throw new Error("Falha ao comunicar com o servidor de autenticação.");
 
-      // 3. Criar a Empresa
+      // 4. Criar o Registo da Empresa
       const { data: empresa, error: empError } = await supabase
         .from('empresas')
         .insert([{
@@ -70,25 +74,25 @@ const Register: React.FC = () => {
 
       if (empError) throw empError;
 
-      // 4. Criar o Utilizador vinculado à Empresa
+      // 5. Vincular Perfil do Utilizador
       const { error: userError } = await supabase
         .from('usuarios')
         .insert([{
-          id: authData.user.id, // Sincronização vital
+          id: authData.user.id, // Sincronizado com auth.uid()
           empresa_id: empresa.id,
           username: userNorm,
           email: emailNorm,
           password: formData.senha,
-          nome: 'Administrador ' + formData.nome,
+          nome: 'Gestor ' + formData.nome,
           role: 'admin'
         }]);
 
       if (userError) throw userError;
 
       setSuccess(true);
-      setTimeout(() => navigate(AppRoute.LOGIN), 5000);
+      setTimeout(() => navigate(AppRoute.LOGIN), 6000);
     } catch (err: any) {
-      alert("Falha no Registo: " + (err.message || "Verifique a ligação à internet."));
+      alert("Falha no Registo IMATEC: " + (err.message || "Erro de integridade de dados."));
     } finally {
       setLoading(false);
     }
@@ -98,19 +102,21 @@ const Register: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-in zoom-in-95 duration-500">
         <div className="max-w-md w-full bg-white p-12 rounded-[2.5rem] shadow-2xl text-center space-y-6 border border-emerald-100">
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto border-4 border-emerald-50">
             <CheckCircle className="w-10 h-10" />
           </div>
-          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Verifique o E-mail</h1>
-          <p className="text-slate-500 text-sm leading-relaxed">
-            A plataforma para <b>{formData.nome.toUpperCase()}</b> foi criada. 
-            Enviamos um link de ativação para <b>{formData.email}</b> via SMTP seguro.
-          </p>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">E-mail de Ativação</h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Enviamos um link de confirmação via SMTP para <b>{formData.email}</b>. 
+              Por favor, valide o seu e-mail para ativar o ambiente cloud.
+            </p>
+          </div>
           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Aceda com:</p>
+            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Utilizador de Acesso:</p>
             <p className="text-sm font-bold text-blue-900 mt-1">@{formData.username.toLowerCase()}</p>
           </div>
-          <p className="text-[10px] text-gray-400 animate-pulse font-black uppercase">Redirecionando para o login...</p>
+          <p className="text-[10px] text-gray-400 animate-pulse font-black uppercase tracking-widest">Redirecionando para login...</p>
         </div>
       </div>
     );
@@ -120,8 +126,8 @@ const Register: React.FC = () => {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-in fade-in duration-500">
       <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
         <div className="bg-blue-900 p-8 text-center text-white">
-          <h1 className="text-2xl font-bold uppercase tracking-tight">Registar Empresa</h1>
-          <p className="text-blue-300 text-[10px] uppercase font-bold tracking-widest mt-1">Setup Cloud IMATEC Multi-Company</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tight">IMATEC CLOUD SETUP</h1>
+          <p className="text-blue-300 text-[10px] uppercase font-bold tracking-widest mt-1">Registo Multi-Empresa Isolado</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-4">
@@ -139,10 +145,10 @@ const Register: React.FC = () => {
               <input required className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="540XXXXXXXX" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value})} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Utilizador</label>
+              <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Username (Sem @)</label>
               <div className="relative">
                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-400" />
-                <input required className="w-full pl-8 pr-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-sm font-bold text-blue-900" placeholder="Sem @" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+                <input required className="w-full pl-8 pr-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-sm font-bold text-blue-900" placeholder="gestor_imatec" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
               </div>
             </div>
           </div>
@@ -164,7 +170,7 @@ const Register: React.FC = () => {
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-700 transition-all disabled:opacity-50 uppercase text-xs tracking-widest mt-4">
-            {loading ? 'A CRIAR AMBIENTE...' : 'ATIVAR ERP CLOUD'}
+            {loading ? 'A CRIAR PLATAFORMA...' : 'ATIVAR AMBIENTE AGORA'}
           </button>
           
           <div className="flex items-center justify-center space-x-2 pt-2">
@@ -175,7 +181,9 @@ const Register: React.FC = () => {
 
         <div className="p-6 bg-slate-50 border-t flex items-start space-x-3">
             <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[9px] text-gray-500 leading-relaxed font-medium uppercase font-bold tracking-tight">O sistema enviará um e-mail de ativação via Supabase SMTP. Username sem "@" obrigatório.</p>
+            <p className="text-[9px] text-gray-500 leading-relaxed font-medium uppercase font-bold tracking-tight">
+                Nota: O Nome de Utilizador é para login. O e-mail é para recepção do link SMTP de ativação e recuperação.
+            </p>
         </div>
       </div>
     </div>
