@@ -3,43 +3,41 @@ import { renderLogin } from './js/auth.js';
 import { renderDashboardLayout } from './js/dashboard.js';
 
 /**
- * Inicialização do Sistema IMATEC
- * Este motor decide entre a tela de login ou o dashboard baseado na sessão.
+ * Motor de Arranque do Sistema
  */
-export const initSystem = () => {
+export const startApp = () => {
+    console.log("[IMATEC] Verificando integridade da sessão...");
+    
     const app = document.getElementById('app');
     if (!app) return;
 
-    console.log("[IMATEC] Motor de arranque iniciado.");
+    // Limpa o loader inicial do HTML
+    app.innerHTML = '';
 
-    // Verifica sessão no localStorage
     const sessionData = localStorage.getItem('imatec_session');
     
     if (sessionData) {
         try {
             const { user, empresa } = JSON.parse(sessionData);
-            if (!user || !empresa) throw new Error("Dados de sessão corrompidos");
-            
-            console.log(`[IMATEC] Sessão ativa: ${user.nome} @ ${empresa.nome}`);
-            // Renderiza o Dashboard diretamente
+            console.log(`[IMATEC] Empresa Ativa: ${empresa.nome}`);
             renderDashboardLayout(user, empresa);
-        } catch (e) {
-            console.error("[IMATEC] Falha na sessão:", e);
+        } catch (err) {
+            console.error("[IMATEC] Erro ao processar sessão:", err);
             localStorage.removeItem('imatec_session');
             renderLogin();
         }
     } else {
-        console.log("[IMATEC] Sem sessão detectada. Redirecionando para Login.");
+        console.log("[IMATEC] Nenhuma sessão encontrada. Abrindo Login.");
         renderLogin();
     }
 };
 
-// Evento de carregamento do DOM para evitar tela branca
+// Inicialização imediata
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSystem);
+    document.addEventListener('DOMContentLoaded', startApp);
 } else {
-    initSystem();
+    startApp();
 }
 
-// Expõe para o escopo global para permitir navegação programática
-(window as any).initIMATEC = initSystem;
+// Expõe globalmente para transições entre módulos
+(window as any).startIMATEC = startApp;

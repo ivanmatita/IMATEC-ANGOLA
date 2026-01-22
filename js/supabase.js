@@ -1,7 +1,4 @@
 
-/**
- * IMATEC SOFTWARE - Supabase Client Config & Multi-Company Utils
- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 export const SUPABASE_URL = 'https://bgudiehufcvdbjaekxyu.supabase.co';
@@ -10,43 +7,27 @@ export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdX
 export const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /**
- * Retorna a sessão atual do localStorage de forma segura
+ * Busca dados filtrando obrigatoriamente pela empresa logada
  */
-export function getActiveSession() {
-  const session = localStorage.getItem('imatec_session');
-  if (!session) return null;
-  try {
-    return JSON.parse(session);
-  } catch (e) {
-    return null;
-  }
-}
+export async function getEmpresaData(tableName) {
+  const sessionData = localStorage.getItem('imatec_session');
+  if (!sessionData) return [];
 
-/**
- * Função utilitária para buscar dados de tabelas filtrando AUTOMATICAMENTE por empresa_id
- * @param {string} tableName Nome da tabela no Supabase
- * @returns {Promise<Array>} Lista de registros filtrados
- */
-export const getEmpresaData = async (tableName) => {
-  const session = getActiveSession();
-  if (!session || !session.empresa) {
-    console.error("[IMATEC] Tentativa de buscar dados sem sessão ativa.");
-    return [];
-  }
+  const { empresa } = JSON.parse(sessionData);
+  const empresaId = empresa.id;
 
-  const empresaId = session.empresa.id;
-  console.log(`[IMATEC] Buscando ${tableName} para a empresa: ${empresaId}`);
+  console.log(`[IMATEC] Filtrando ${tableName} para empresa_id: ${empresaId}`);
 
   try {
     const { data, error } = await client
       .from(tableName)
       .select('*')
-      .eq('empresa_id', empresaId);
-    
+      .eq('empresa_id', empresaId); // ISOLAMENTO COMPLETO
+
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.error(`[IMATEC] Erro ao buscar ${tableName}:`, err);
+    console.error(`Erro ao buscar ${tableName}:`, err);
     return [];
   }
-};
+}
