@@ -3,7 +3,6 @@ export interface Empresa {
   id: string;
   nome_empresa: string;
   nif_empresa: string;
-  // Common fields used across UI components for display
   nome: string;
   nif: string;
   administrador: string;
@@ -17,11 +16,11 @@ export interface User {
   id: string;
   empresa_id: string;
   nome: string;
+  username: string;
   email: string;
   role: 'admin' | 'operador' | 'contabilista';
 }
 
-// Added missing types for RH module as required by pages/RH.tsx
 export type TipoContrato = 'Indeterminado' | 'Termo Certo' | 'Termo Incerto' | 'Estágio';
 export type EstadoFuncionario = 'Ativo' | 'Inativo' | 'Férias' | 'Suspenso';
 
@@ -57,7 +56,6 @@ export interface Faturacao {
   created_at: string;
 }
 
-// Missing interface for salary processing in RH
 export interface ProcessamentoSalario {
   funcionario_id: string;
   mes: number;
@@ -66,7 +64,6 @@ export interface ProcessamentoSalario {
   estado: string;
 }
 
-// Missing interface for daily effectiveness tracking in RH
 export interface EfetividadeDiaria {
   id: string;
   funcionario_id: string;

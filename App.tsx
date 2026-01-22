@@ -33,10 +33,13 @@ const App: React.FC = () => {
         localStorage.removeItem('imatec_session');
       } finally {
         setLoading(false);
+        // Chama a função global definida no index.html para remover o loader estático
+        if ((window as any).removeInitialLoader) {
+          (window as any).removeInitialLoader();
+        }
       }
     };
 
-    // Executa imediatamente para evitar páginas brancas
     checkSession();
   }, []);
 
@@ -52,32 +55,22 @@ const App: React.FC = () => {
     localStorage.removeItem('imatec_session');
   };
 
-  // Enquanto verifica a sessão, mostramos o loader temático
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 space-y-4">
-        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verificando Ambiente Cloud...</p>
-      </div>
-    );
+    return null; // O loader do index.html lida com esta fase
   }
 
   return (
     <HashRouter>
       <Routes>
-        {/* Rota de Login: Se já estiver logado, vai pro dashboard */}
         <Route 
           path={AppRoute.LOGIN} 
           element={!user ? <Login onLogin={handleLogin} /> : <Navigate to={AppRoute.DASHBOARD} replace />} 
         />
-        
-        {/* Rota de Registo: Aberta a novas empresas */}
         <Route 
           path={AppRoute.REGISTER} 
           element={!user ? <Register /> : <Navigate to={AppRoute.DASHBOARD} replace />} 
         />
         
-        {/* Proteção de Rotas com Layout Multi-Empresa */}
         <Route element={user ? <Layout user={user} empresa={empresa!} onLogout={handleLogout} /> : <Navigate to={AppRoute.LOGIN} replace />}>
           <Route path={AppRoute.DASHBOARD} element={<Dashboard empresa={empresa!} />} />
           <Route path={AppRoute.FATURACAO} element={<Faturacao empresa={empresa!} />} />
@@ -85,7 +78,6 @@ const App: React.FC = () => {
           <Route path={AppRoute.RH} element={<RH empresa={empresa!} />} />
           <Route path={AppRoute.POS} element={<POS empresa={empresa!} />} />
           
-          {/* Fallback para rotas protegidas não encontradas */}
           <Route path="*" element={
             <div className="p-12 text-center animate-in fade-in">
               <div className="w-20 h-20 bg-blue-50 text-blue-300 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -98,14 +90,12 @@ const App: React.FC = () => {
           } />
         </Route>
 
-        {/* Fallback Global */}
         <Route path="/" element={<Navigate to={AppRoute.DASHBOARD} replace />} />
       </Routes>
     </HashRouter>
   );
 };
 
-// Importação necessária para o fallback
 import { LayoutDashboard } from 'lucide-react';
 
 export default App;
