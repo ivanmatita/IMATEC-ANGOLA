@@ -1,0 +1,8 @@
+{
+  "name": "IMATEC SOFTWARE - Multi-Company ERP",
+  "description": "Sistema ERP Multi-empresa em Vanilla JS compatível com GitHub Pages.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
