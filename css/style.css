@@ -10,18 +10,8 @@ body {
     font-family: 'Lato', sans-serif;
 }
 
-.sidebar-item:hover {
-    background-color: rgba(30, 58, 138, 0.8);
-}
-
-.active-tab {
-    background-color: #1e3a8a !important;
-    color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
 .animate-in {
-    animation: fadeIn 0.4s ease-out;
+    animation: fadeIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
@@ -29,22 +19,12 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.zoom-in-95 {
-    animation: zoomIn 0.3s ease-out;
-}
-
-@keyframes zoomIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
 ::-webkit-scrollbar {
     width: 6px;
-    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -52,12 +32,6 @@ body {
     border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+.nav-btn:hover {
+    background-color: rgba(30, 58, 138, 0.8);
 }
